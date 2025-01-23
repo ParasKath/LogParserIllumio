@@ -144,6 +144,47 @@ CHUNK_SIZE = Math.max(1, estimatedLines / THREAD_COUNT);
 1. The calculateChunkSize method takes the following inputs:filePath: Path to the log file, properties: Properties loaded from config.properties and THREAD_COUNT: Number of threads being used for parallel processing.
 2. It returns the optimal chunk size for splitting the file into manageable parts.
 
+# End-to-End Flow of the Project
+
+## Configuration Loading:
+
+1. The FlowLogProcessor loads configurations (e.g., input/output file paths, thread count, and average line size) from the config.properties file.
+
+## Lookup Table Loading:
+
+1. The LookupLoader reads the lookupFile and maps destination port-protocol combinations to tags for efficient lookups.
+
+## Chunk Size Calculation:
+
+1. The ChunkSizeCalculator dynamically calculates the optimal chunk size based on file size, average line size, and thread count.
+
+## Parallel Log Processing:
+
+1. The flow log file is split into chunks, which are processed in parallel using CompletableFuture and an ExecutorService.
+2. Each chunk is handled by the ChunkProcessor, which maps log entries to tags and aggregates results.
+
+## Thread-Safe Aggregation:
+
+1. Aggregated tag counts and port-protocol counts are stored in a shared ProcessingResult object, which uses ConcurrentHashMap for thread-safe updates.
+
+## Writing Results:
+
+1. Once all chunks are processed, the OutputWriter writes the aggregated results to:
+ --> tag_counts.csv: Tag-wise counts.
+--> port_protocol_counts.csv: Port-protocol combination counts.
+
+# How Key Components Improve Performance
+##  CompletableFuture with ExecutorService:
+1. Ensures parallel, asynchronous processing of chunks using a fixed number of threads (maxThreads).
+
+## Dynamic Chunk Size:
+
+1. Balances workload across threads by splitting the file into optimal chunks.
+
+## ConcurrentHashMap:
+
+1. Allows multiple threads to safely update shared data structures without explicit synchronization.
+2. Ensures high performance even under contention with internal optimizations like bucket-level locks and red-black trees.
 
 # How It Works
 
