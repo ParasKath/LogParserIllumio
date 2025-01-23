@@ -39,7 +39,7 @@ src/test/java/\
 │   ├── io/\
 │   │   ├── LookupLoaderTest.java   // Unit tests for LookupLoader\
 │   │   ├── OutputWriterTest.java   // Unit tests for OutputWriter\
-│   ├── util/
+│   ├── util
 
 # How to Run
 
@@ -54,7 +54,7 @@ mvn clean install
 
  mvn exec:java
 
-## Configure the Input and Output Files
+## How to Configure the input and output files
 Open the config.properties file located in src/main/resources/properties/config.properties and modify the following properties:
 
 Path to the flow log file flowLogFile=src/main/resources/inputFiles/flow_logs_test.txt
@@ -67,6 +67,27 @@ Maximum number of threads to use maxThreads=10
 
 Average line size in bytes (used for dynamic chunk size calculation) averageLineSize=200
 
+### 1. File Paths:
+
+Specify the input and output file paths in the properties file:
+properties
+flowLogFile=src/main/resources/inputFiles/flow_logs_test.txt
+lookupFile=src/main/resources/inputFiles/lookUpTable.txt
+outputDir=src/main/resources/outputFiles
+
+
+### 2. Thread Count:
+
+Set the maximum number of threads (default is 10):
+properties
+maxThreads=10
+
+### 3. Average Line Size:
+
+Specify the average line size (in bytes) to improve chunk size calculation:
+properties
+averageLineSize=200
+
 # Classes and Their Responsibilities
 
 ## 1. FlowLogProcessor
@@ -77,8 +98,8 @@ Average line size in bytes (used for dynamic chunk size calculation) averageLine
 ### Responsibilities: 
 1. Loads the lookup table from the file.
 2. Splits the flow logs into manageable chunks.
- 3. Orchestrates parallel processing of chunks using CompletableFuture and ExecutorService.
- 4. Waits for all tasks to complete and writes the aggregated results to output files.
+3. Orchestrates parallel processing of chunks using CompletableFuture and ExecutorService.
+4. Waits for all tasks to complete and writes the aggregated results to output files.
 
 
 ## 2. LookupLoader
@@ -121,6 +142,20 @@ Average line size in bytes (used for dynamic chunk size calculation) averageLine
  1. Writes tag counts to tag_counts.csv.
  2. Writes port-protocol combination counts to port_protocol_counts.csv.
 
+## 7. ChunkSizeCalculator
+### Role:
+1. Calculates the chunk size dynamically based on the file size and the number of threads.
+
+### Responsibilities:
+1. Estimates the number of lines in the log file by dividing the file size (in bytes) by the average line size.
+2. Dynamically calculates the chunk size using the formula:
+CHUNK_SIZE = Math.max(1, estimatedLines / THREAD_COUNT);
+3. Reads the averageLineSize configuration from the config.properties file. If invalid or missing, defaults to 200.
+
+### Working:
+1. The calculateChunkSize method takes the following inputs:filePath: Path to the log file, properties: Properties loaded from config.properties and THREAD_COUNT: Number of threads being used for parallel processing.
+2. It returns the optimal chunk size for splitting the file into manageable parts.
+
 
 # How It Works
 
@@ -138,7 +173,7 @@ Average line size in bytes (used for dynamic chunk size calculation) averageLine
  dstport,protocol,tag \
  443,tcp,web \
  80,tcp,web \
- 22,tcp,ssh \
+ 22,tcp,ssh 
 
 ## Output Files
 
@@ -147,7 +182,7 @@ Average line size in bytes (used for dynamic chunk size calculation) averageLine
 2. Example:
    Tag,Count\
    web,10\
-   ssh,5\
+   ssh,5
 
 ### Port-Protocol Counts (port_protocol_counts.csv)
 1. Aggregates the count of logs for each port-protocol combination.
