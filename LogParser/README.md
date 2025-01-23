@@ -39,7 +39,144 @@ src/test/java/\
 │   ├── io/\
 │   │   ├── LookupLoaderTest.java   // Unit tests for LookupLoader\
 │   │   ├── OutputWriterTest.java   // Unit tests for OutputWriter\
-│   ├── util/
+│   ├── util
+
+# How to Run
+
+## Prerequisites
+1. Java Version : Java 8 or higher
+2. Build Tool : Maven
+
+## Build the Project
+mvn clean install
+
+## Run the Application
+
+ mvn exec:java
+
+## How to Configure the input and output files
+### 1. File Paths:
+
+Specify the input and output file paths in the properties file:
+properties
+flowLogFile=src/main/resources/inputFiles/flow_logs_test.txt
+lookupFile=src/main/resources/inputFiles/lookUpTable.txt
+outputDir=src/main/resources/outputFiles
+
+
+### 2. Thread Count:
+
+Set the maximum number of threads (default is 10):
+properties
+maxThreads=10
+
+### 3. Average Line Size:
+
+Specify the average line size (in bytes) to improve chunk size calculation:
+properties
+averageLineSize=200
+
+# Classes and Their Responsibilities
+
+## 1. FlowLogProcessor
+
+### Role:
+#### 1. The main entry point of the application.
+
+### Responsibilities: 
+1. Loads the lookup table from the file.
+2. Splits the flow logs into manageable chunks.
+3. Orchestrates parallel processing of chunks using CompletableFuture and ExecutorService.
+4. Waits for all tasks to complete and writes the aggregated results to output files.
+
+
+## 2. LookupLoader
+### Role:
+ 1. Loads the lookup table data from a CSV file.
+
+### Responsibilities:
+ 1. Reads the destination port, protocol, and tag mappings.
+ 2. Populates a HashMap for efficient lookups during log processing.
+
+## 3. ChunkProcessor
+### Role:
+ 1. Processes each chunk of flow log data.
+### Responsibilities:
+ 1. Maps protocol numbers to protocol names.
+ 2. Aggregates tag counts and port-protocol combination counts in a thread-safe manner.
+ 3. Handles errors gracefully for malformed log lines.
+
+## 4. ProtocolMapper
+### Role:
+ 1. Maps protocol numbers to their respective protocol names.
+
+### Responsibilities:
+ 1. Supports predefined mappings (e.g., "6" to "TCP", "17" to "UDP").
+ 2. Extensible for additional protocol mappings as needed.
+
+## 5. ProcessingResult
+### Role:
+ 1. Encapsulates thread-safe aggregation logic.
+
+### Responsibilities:
+ 1. Maintains a ConcurrentHashMap for tag counts and port-protocol counts.
+ 2. Provides methods for safely incrementing counts and merging results from multiple threads.
+
+## 6. OutputWriter
+### Role:
+ 1. Writes aggregated results to output files.
+
+### Responsibilities:
+ 1. Writes tag counts to tag_counts.csv.
+ 2. Writes port-protocol combination counts to port_protocol_counts.csv.
+
+## 7. ChunkSizeCalculator
+### Role:
+1. Calculates the chunk size dynamically based on the file size and the number of threads.
+
+### Responsibilities:
+1. Estimates the number of lines in the log file by dividing the file size (in bytes) by the average line size.
+2. Dynamically calculates the chunk size using the formula:
+CHUNK_SIZE = Math.max(1, estimatedLines / THREAD_COUNT);
+3. Reads the averageLineSize configuration from the config.properties file. If invalid or missing, defaults to 200.
+
+### Working:
+1. The calculateChunkSize method takes the following inputs:filePath: Path to the log file, properties: Properties loaded from config.properties and THREAD_COUNT: Number of threads being used for parallel processing.
+2. It returns the optimal chunk size for splitting the file into manageable parts.
+
+
+# How It Works
+
+## Input Files
+
+### 1. Flow logs
+
+#### A text file containing flow log data with fields like destination port, protocol number, etc.
+ Example: 2 123456789012 eni-0a1b2c3d 10.0.1.201 198.51.100.2 443 49153 6 25 20000 1620140761 1620140821 ACCEPT OK
+
+### Lookup Table
+
+#### A CSV file mapping destination ports and protocols to tags.
+ Example:
+ dstport,protocol,tag \
+ 443,tcp,web \
+ 80,tcp,web \
+ 22,tcp,ssh 
+
+## Output Files
+
+### Tag Counts (tag_counts.csv)
+1. Aggregates the count of logs for each tag.
+2. Example:
+   Tag,Count\
+   web,10\
+   ssh,5
+
+### Port-Protocol Counts (port_protocol_counts.csv)
+1. Aggregates the count of logs for each port-protocol combination.
+2. Port,Protocol,Count
+   443,tcp,6
+   80,tcp,4
 
 
 # Why These Design Choices?
@@ -91,118 +228,6 @@ Threads in the pool are reused across tasks, reducing the overhead of creating a
 
 The thread pool size is dynamically configurable to optimize resource utilization based on the system's capabilities.
 
-# Classes and Their Responsibilities
-
-## 1. FlowLogProcessor
-
-### Role:
-#### 1. The main entry point of the application.
-
-### Responsibilities: 
-1. Loads the lookup table from the file.
-2. Splits the flow logs into manageable chunks.
- 3. Orchestrates parallel processing of chunks using CompletableFuture and ExecutorService.
- 4. Waits for all tasks to complete and writes the aggregated results to output files.
-
-
-## 2. LookupLoader
-### Role:
- 1. Loads the lookup table data from a CSV file.
-
-### Responsibilities:
- 1. Reads the destination port, protocol, and tag mappings.
- 2. Populates a HashMap for efficient lookups during log processing.
-
-## 3. ChunkProcessor
-### Role:
- 1. Processes each chunk of flow log data.
-### Responsibilities:
- 1. Maps protocol numbers to protocol names.
- 2. Aggregates tag counts and port-protocol combination counts in a thread-safe manner.
- 3. Handles errors gracefully for malformed log lines.
-
-## 4. ProtocolMapper
-### Role:
- 1. Maps protocol numbers to their respective protocol names.
-
-### Responsibilities:
- 1. Supports predefined mappings (e.g., "6" to "TCP", "17" to "UDP").
- 2. Extensible for additional protocol mappings as needed.
-
-## 5. ProcessingResult
-### Role:
- 1. Encapsulates thread-safe aggregation logic.
-
-### Responsibilities:
- 1. Maintains a ConcurrentHashMap for tag counts and port-protocol counts.
- 2. Provides methods for safely incrementing counts and merging results from multiple threads.
-
-## 6. OutputWriter
-### Role:
- 1. Writes aggregated results to output files.
-
-### Responsibilities:
- 1. Writes tag counts to tag_counts.csv.
- 2. Writes port-protocol combination counts to port_protocol_counts.csv.
-
-# How It Works
-
-## Input Files
-
-### 1. Flow logs
-
-#### A text file containing flow log data with fields like destination port, protocol number, etc.
- Example: 2 123456789012 eni-0a1b2c3d 10.0.1.201 198.51.100.2 443 49153 6 25 20000 1620140761 1620140821 ACCEPT OK
-
-### Lookup Table
-
-#### A CSV file mapping destination ports and protocols to tags.
- Example:
- dstport,protocol,tag \
- 443,tcp,web \
- 80,tcp,web \
- 22,tcp,ssh \
-
-## Output Files
-
-### Tag Counts (tag_counts.csv)
-1. Aggregates the count of logs for each tag.
-2. Example:
-   Tag,Count\
-   web,10\
-   ssh,5\
-
-### Port-Protocol Counts (port_protocol_counts.csv)
-1. Aggregates the count of logs for each port-protocol combination.
-2. Port,Protocol,Count
-   443,tcp,6
-   80,tcp,4
-
-# How to Run
-
-## Prerequisites
-1. Java Version : Java 8 or higher
-2. Build Tool : Maven
-
-## Build the Project
-mvn clean install
-
-## Run the Application
-
- mvn exec:java
-
-## Configure the Input and Output Files
-Open the config.properties file located in src/main/resources/properties/config.properties and modify the following properties:
-
-Path to the flow log file flowLogFile=src/main/resources/inputFiles/flow_logs_test.txt
-
-Path to the lookup table file lookupFile=src/main/resources/inputFiles/lookUpTable.txt
-
-Path to the output directory outputDir=src/main/resources/outputFiles
-
-Maximum number of threads to use maxThreads=10
-
-Average line size in bytes (used for dynamic chunk size calculation) averageLineSize=200
 
 # Key Design Principles
 
