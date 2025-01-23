@@ -55,18 +55,6 @@ mvn clean install
  mvn exec:java
 
 ## How to Configure the input and output files
-Open the config.properties file located in src/main/resources/properties/config.properties and modify the following properties:
-
-Path to the flow log file flowLogFile=src/main/resources/inputFiles/flow_logs_test.txt
-
-Path to the lookup table file lookupFile=src/main/resources/inputFiles/lookUpTable.txt
-
-Path to the output directory outputDir=src/main/resources/outputFiles
-
-Maximum number of threads to use maxThreads=10
-
-Average line size in bytes (used for dynamic chunk size calculation) averageLineSize=200
-
 ### 1. File Paths:
 
 Specify the input and output file paths in the properties file:
