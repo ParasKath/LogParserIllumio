@@ -1,0 +1,9 @@
+main\processor\data\PortProtocolKey.class
+main\processor\util\ChunkSizeCalculator.class
+main\processor\data\ProcessingResult.class
+main\processor\io\LookupLoader.class
+main\processor\FlowLogProcessor.class
+main\processor\io\OutputWriter.class
+main\processor\chunk\ChunkProcessor.class
+main\processor\util\LoadConfigProperties.class
+main\processor\util\ProtocolMapper.class
