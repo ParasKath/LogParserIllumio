@@ -41,55 +41,31 @@ src/test/java/\
 │   │   ├── OutputWriterTest.java   // Unit tests for OutputWriter\
 │   ├── util/
 
+# How to Run
 
-# Why These Design Choices?
+## Prerequisites
+1. Java Version : Java 8 or higher
+2. Build Tool : Maven
 
-## 1. Why ConcurrentHashMap?
+## Build the Project
+mvn clean install
 
-### 1. Thread Safety:
+## Run the Application
 
-ConcurrentHashMap provides thread-safe operations, enabling multiple threads to update the map without requiring explicit synchronization. This is critical for concurrent tasks such as aggregating results from multiple chunks of logs.
+ mvn exec:java
 
-### 2. High Performance:
+## Configure the Input and Output Files
+Open the config.properties file located in src/main/resources/properties/config.properties and modify the following properties:
 
-Operations like put, get, and merge are implemented with minimal contention using bucket-level locks and CAS (Compare-And-Swap), ensuring high throughput even under heavy load.
+Path to the flow log file flowLogFile=src/main/resources/inputFiles/flow_logs_test.txt
 
-### 3. Scalability:
+Path to the lookup table file lookupFile=src/main/resources/inputFiles/lookUpTable.txt
 
-ConcurrentHashMap supports concurrent reads and writes, making it ideal for highly parallel tasks such as log aggregation. Different threads can operate on different buckets simultaneously without blocking each other.
+Path to the output directory outputDir=src/main/resources/outputFiles
 
-### 4. Time Complexity:
+Maximum number of threads to use maxThreads=10
 
-In the average case, the time complexity of operations like get, put, and remove is O(1) because the keys are distributed across buckets uniformly.
-In the worst case, when many keys are hashed to the same bucket (high collision rate), the bucket’s structure changes from a linked list to a red-black tree. This reduces the worst-case time complexity for bucket operations (like get or put) from O(n) to O(log n), where n is the number of entries in that bucket.
-
-## 2. Why CompletableFuture?
-
-### 1. Asynchronous Processing:
-
-CompletableFuture allows us to process log chunks asynchronously and efficiently manage parallelism. Each chunk of logs is processed independently in a non-blocking manner.
-
-### 2. Simplified Concurrency:
-
-Provides a clean and declarative way to execute tasks and wait for their completion using methods like allOf().
-
-### 3. Error Handling:
-
-Built-in methods for exception handling make it robust for handling errors in asynchronous tasks.
-
-## 3. Why ExecutorService?
-
-### 1. Thread Pool Management:
-
-Using ExecutorService, we create a fixed-size thread pool (THREAD_COUNT) to control the number of threads and prevent resource overloading.
-
-### 2. Reusability:
-
-Threads in the pool are reused across tasks, reducing the overhead of creating and destroying threads.
-
-### 3. Tunable Performance:
-
-The thread pool size is dynamically configurable to optimize resource utilization based on the system's capabilities.
+Average line size in bytes (used for dynamic chunk size calculation) averageLineSize=200
 
 # Classes and Their Responsibilities
 
@@ -145,6 +121,7 @@ The thread pool size is dynamically configurable to optimize resource utilizatio
  1. Writes tag counts to tag_counts.csv.
  2. Writes port-protocol combination counts to port_protocol_counts.csv.
 
+
 # How It Works
 
 ## Input Files
@@ -178,31 +155,56 @@ The thread pool size is dynamically configurable to optimize resource utilizatio
    443,tcp,6
    80,tcp,4
 
-# How to Run
 
-## Prerequisites
-1. Java Version : Java 8 or higher
-2. Build Tool : Maven
+# Why These Design Choices?
 
-## Build the Project
-mvn clean install
+## 1. Why ConcurrentHashMap?
 
-## Run the Application
+### 1. Thread Safety:
 
- mvn exec:java
+ConcurrentHashMap provides thread-safe operations, enabling multiple threads to update the map without requiring explicit synchronization. This is critical for concurrent tasks such as aggregating results from multiple chunks of logs.
 
-## Configure the Input and Output Files
-Open the config.properties file located in src/main/resources/properties/config.properties and modify the following properties:
+### 2. High Performance:
 
-Path to the flow log file flowLogFile=src/main/resources/inputFiles/flow_logs_test.txt
+Operations like put, get, and merge are implemented with minimal contention using bucket-level locks and CAS (Compare-And-Swap), ensuring high throughput even under heavy load.
 
-Path to the lookup table file lookupFile=src/main/resources/inputFiles/lookUpTable.txt
+### 3. Scalability:
 
-Path to the output directory outputDir=src/main/resources/outputFiles
+ConcurrentHashMap supports concurrent reads and writes, making it ideal for highly parallel tasks such as log aggregation. Different threads can operate on different buckets simultaneously without blocking each other.
 
-Maximum number of threads to use maxThreads=10
+### 4. Time Complexity:
 
-Average line size in bytes (used for dynamic chunk size calculation) averageLineSize=200
+In the average case, the time complexity of operations like get, put, and remove is O(1) because the keys are distributed across buckets uniformly.
+In the worst case, when many keys are hashed to the same bucket (high collision rate), the bucket’s structure changes from a linked list to a red-black tree. This reduces the worst-case time complexity for bucket operations (like get or put) from O(n) to O(log n), where n is the number of entries in that bucket.
+
+## 2. Why CompletableFuture?
+
+### 1. Asynchronous Processing:
+
+CompletableFuture allows us to process log chunks asynchronously and efficiently manage parallelism. Each chunk of logs is processed independently in a non-blocking manner.
+
+### 2. Simplified Concurrency:
+
+Provides a clean and declarative way to execute tasks and wait for their completion using methods like allOf().
+
+### 3. Error Handling:
+
+Built-in methods for exception handling make it robust for handling errors in asynchronous tasks.
+
+## 3. Why ExecutorService?
+
+### 1. Thread Pool Management:
+
+Using ExecutorService, we create a fixed-size thread pool (THREAD_COUNT) to control the number of threads and prevent resource overloading.
+
+### 2. Reusability:
+
+Threads in the pool are reused across tasks, reducing the overhead of creating and destroying threads.
+
+### 3. Tunable Performance:
+
+The thread pool size is dynamically configurable to optimize resource utilization based on the system's capabilities.
+
 
 # Key Design Principles
 
