@@ -175,8 +175,8 @@ sharedResult.incrementPortProtocolCount(dstport, protocol);
 
 ## Writing Results:
 
-1. Once all chunks are processed, the OutputWriter writes the aggregated results to:
- --> tag_counts.csv: Tag-wise counts.
+1. Once all chunks are processed, the OutputWriter writes the aggregated results to: \
+--> tag_counts.csv: Tag-wise counts.\
 --> port_protocol_counts.csv: Port-protocol combination counts.
 
 # How Key Components Improve Performance
