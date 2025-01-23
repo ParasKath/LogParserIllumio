@@ -59,8 +59,8 @@ mvn clean install
 
 Specify the input and output file paths in the properties file: src/main/resources/properties/config.properties
 properties
-flowLogFile=src/main/resources/inputFiles/flow_logs_test.txt
-lookupFile=src/main/resources/inputFiles/lookUpTable.txt
+flowLogFile=src/main/resources/inputFiles/flow_logs_test.txt\
+lookupFile=src/main/resources/inputFiles/lookUpTable.txt\
 outputDir=src/main/resources/outputFiles
 
 
