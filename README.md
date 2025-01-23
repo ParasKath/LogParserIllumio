@@ -163,9 +163,15 @@ CHUNK_SIZE = Math.max(1, estimatedLines / THREAD_COUNT);
 1. The flow log file is split into chunks, which are processed in parallel using CompletableFuture and an ExecutorService.
 2. Each chunk is handled by the ChunkProcessor, which maps log entries to tags and aggregates results.
 
+CompletableFuture.runAsync(() -> processChunk(chunk, lookupTable, sharedResult), executor);
+
+
 ## Thread-Safe Aggregation:
 
 1. Aggregated tag counts and port-protocol counts are stored in a shared ProcessingResult object, which uses ConcurrentHashMap for thread-safe updates.
+
+sharedResult.incrementTagCount(tag);
+sharedResult.incrementPortProtocolCount(dstport, protocol);
 
 ## Writing Results:
 
